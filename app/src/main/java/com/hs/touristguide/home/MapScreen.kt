@@ -158,7 +158,7 @@ fun MapScreen() {
                     }
                 },
                 label = { Text("Search location") },
-                textStyle = TextStyle(color = Color.Black), // Typed text visible
+                textStyle = TextStyle(color = Color.White), // Typed text visible
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(bottom = 4.dp),

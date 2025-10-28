@@ -24,6 +24,8 @@ fun ChatBotScreen(viewModel: ChatViewModel = viewModel()) {
     val messages = viewModel.messages
 
     Box(modifier = Modifier.fillMaxSize()) {
+
+        // ✅ Background image
         Image(
             painter = painterResource(id = R.drawable.chatbot_icon),
             contentDescription = "Chatbot Background",
@@ -31,15 +33,24 @@ fun ChatBotScreen(viewModel: ChatViewModel = viewModel()) {
             modifier = Modifier.fillMaxSize()
         )
 
+        // ✅ Overlay for readability
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.4f))
         )
 
-        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp)
+        ) {
+
+            // ✅ Chat history
             LazyColumn(
-                modifier = Modifier.weight(1f).fillMaxWidth(),
+                modifier = Modifier
+                    .weight(1f)
+                    .fillMaxWidth(),
                 reverseLayout = true,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -50,6 +61,7 @@ fun ChatBotScreen(viewModel: ChatViewModel = viewModel()) {
 
             Spacer(modifier = Modifier.height(8.dp))
 
+            // ✅ Input row
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -87,9 +99,12 @@ fun ChatBotScreen(viewModel: ChatViewModel = viewModel()) {
 @Composable
 fun ChatBubble(message: Message) {
     val backgroundColor =
-        if (message.isUser) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.secondary
+        if (message.isUser) MaterialTheme.colorScheme.primary
+        else MaterialTheme.colorScheme.secondary
+
     val textColor =
-        if (message.isUser) MaterialTheme.colorScheme.onPrimary else MaterialTheme.colorScheme.onSecondary
+        if (message.isUser) MaterialTheme.colorScheme.onPrimary
+        else MaterialTheme.colorScheme.onSecondary
 
     Surface(
         shape = MaterialTheme.shapes.medium,
@@ -110,6 +125,7 @@ fun ChatBubble(message: Message) {
         }
     }
 }
+
 
 
 //AIzaSyDkONth5K97R7K4Y_RSrF7jR_3gqWQdiVg

@@ -5,7 +5,7 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.hs.touristguide.Homescreen.HomeScreen
+import com.hs.touristguide.home.HomeScreen
 import com.hs.touristguide.auth.AuthViewModel
 import com.hs.touristguide.auth.LoginScreen
 import com.hs.touristguide.auth.SignUpScreen

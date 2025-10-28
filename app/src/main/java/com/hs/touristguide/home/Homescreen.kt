@@ -1,4 +1,4 @@
-package com.hs.touristguide.Homescreen
+package com.hs.touristguide.home
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -29,13 +29,17 @@ fun HomeScreen(navController: NavHostController) {
             contentScale = ContentScale.Crop
         )
 
-        // Overlay
-        Box(modifier = Modifier.fillMaxSize().background(Color.Black.copy(alpha = 0.5f)))
+        // Dark Overlay
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black.copy(alpha = 0.5f))
+        )
 
         if (showCamera) {
             CameraPermissionRequest {
                 CameraCaptureScreen(
-                    onImageCaptured = { /* No need to handle here */ showCamera = false },
+                    onImageCaptured = { showCamera = false },
                     onError = { showCamera = false }
                 )
             }
@@ -83,7 +87,6 @@ fun HomeScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Navigate to Gallery Screen
                 Button(
                     onClick = { navController.navigate("gallery") },
                     modifier = Modifier.fillMaxWidth(0.7f)
@@ -94,5 +97,3 @@ fun HomeScreen(navController: NavHostController) {
         }
     }
 }
-
-

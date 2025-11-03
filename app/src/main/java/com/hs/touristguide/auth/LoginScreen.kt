@@ -1,5 +1,6 @@
 package com.hs.touristguide.auth
 
+import android.widget.Toast
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -9,6 +10,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
@@ -23,11 +25,13 @@ fun LoginScreen(
 ) {
     var email by remember { mutableStateOf("") }
     var password by remember { mutableStateOf("") }
-
     val uiState by authViewModel.uiState.collectAsState()
+    val context = LocalContext.current
 
     LaunchedEffect(uiState.isLoggedIn) {
         if (uiState.isLoggedIn) {
+            authViewModel.fetchUserProfile() // 🔹 Load user profile immediately
+            Toast.makeText(context, "Login successful!", Toast.LENGTH_SHORT).show()
             navController.navigate("home") {
                 popUpTo("login") { inclusive = true }
             }
@@ -35,7 +39,6 @@ fun LoginScreen(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // 🌄 Background Image
         Image(
             painter = painterResource(id = R.drawable.loginscreen),
             contentDescription = "Login Background",
@@ -43,14 +46,12 @@ fun LoginScreen(
             contentScale = ContentScale.Crop
         )
 
-        // 🟫 Semi-transparent overlay
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.4f))
         )
 
-        // 🔐 Login Form
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -58,12 +59,8 @@ fun LoginScreen(
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(
-                text = "Tourist Guide",
-                style = MaterialTheme.typography.headlineMedium,
-                color = Color.White
-            )
-            Spacer(modifier = Modifier.height(32.dp))
+            Text("Tourist Guide", style = MaterialTheme.typography.headlineMedium, color = Color.White)
+            Spacer(Modifier.height(32.dp))
 
             OutlinedTextField(
                 value = email,
@@ -73,15 +70,12 @@ fun LoginScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.White,
                     unfocusedBorderColor = Color.White.copy(alpha = 0.7f),
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White
+                    unfocusedTextColor = Color.White
                 )
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
                 value = password,
@@ -92,19 +86,16 @@ fun LoginScreen(
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = Color.White,
                     unfocusedBorderColor = Color.White.copy(alpha = 0.7f),
-                    focusedLabelColor = Color.White,
-                    unfocusedLabelColor = Color.White.copy(alpha = 0.7f),
                     focusedTextColor = Color.White,
-                    unfocusedTextColor = Color.White,
-                    cursorColor = Color.White
+                    unfocusedTextColor = Color.White
                 )
             )
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            uiState.error?.let { error ->
+            uiState.error?.let {
                 Text(
-                    text = error,
+                    text = it,
                     color = MaterialTheme.colorScheme.error,
                     modifier = Modifier.padding(bottom = 8.dp)
                 )
@@ -126,13 +117,26 @@ fun LoginScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(Modifier.height(16.dp))
 
-            TextButton(onClick = { navController.navigate("forgot_password") }) {
+            TextButton(
+                onClick = {
+                    if (email.isNotEmpty()) {
+                        authViewModel.onForgotPassword(email)
+                        Toast.makeText(
+                            context,
+                            "Password reset email sent if account exists.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    } else {
+                        Toast.makeText(context, "Please enter your email first.", Toast.LENGTH_SHORT).show()
+                    }
+                }
+            ) {
                 Text("Forgot Password?", color = Color.White)
             }
 
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(Modifier.height(8.dp))
 
             TextButton(onClick = { navController.navigate("signup") }) {
                 Text("Create New Account", color = Color.White)
@@ -140,4 +144,3 @@ fun LoginScreen(
         }
     }
 }
-

@@ -20,12 +20,13 @@ import coil.compose.rememberAsyncImagePainter
 class FullScreenImageActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
         val imageUriString = intent.getStringExtra("imageUri")
 
         setContent {
-            imageUriString?.let {
-                FullScreenImageScreen(uri = Uri.parse(it)) {
-                    finish() // close when tapped
+            imageUriString?.let { uriString ->
+                FullScreenImageScreen(uri = Uri.parse(uriString)) {
+                    finish() // Close activity when tapped
                 }
             }
         }
@@ -38,14 +39,14 @@ fun FullScreenImageScreen(uri: Uri, onClose: () -> Unit) {
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
-            .clickable { onClose() },
+            .clickable { onClose() }, // Close on tap
         contentAlignment = Alignment.Center
     ) {
         Image(
             painter = rememberAsyncImagePainter(model = uri),
-            contentDescription = null,
+            contentDescription = "Full Screen Photo",
             modifier = Modifier.fillMaxSize(),
-            contentScale = ContentScale.Fit
+            contentScale = ContentScale.Crop // Fill the screen nicely
         )
     }
 }

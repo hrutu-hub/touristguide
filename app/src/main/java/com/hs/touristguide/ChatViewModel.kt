@@ -20,7 +20,7 @@ class ChatViewModel : ViewModel() {
     private val apiKey = BuildConfig.GEMINI_API_KEY
 
     private val apiUrl =
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$apiKey"
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=AIzaSyB1HbIZc1Tp5HMlgnrgep-DV-BiMDv6hdM\n"
 
     val messages = mutableStateListOf<Message>()
 

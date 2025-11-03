@@ -1,5 +1,4 @@
 package com.hs.touristguide.home
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -16,41 +15,26 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hs.touristguide.R
-
 @Composable
 fun ChatBotScreen(viewModel: ChatViewModel = viewModel()) {
     var userInput by remember { mutableStateOf("") }
     var isSending by remember { mutableStateOf(false) }
     val messages = viewModel.messages
-
     Box(modifier = Modifier.fillMaxSize()) {
-
-        // ✅ Background image
         Image(
             painter = painterResource(id = R.drawable.chatbot_icon),
             contentDescription = "Chatbot Background",
             contentScale = ContentScale.Crop,
             modifier = Modifier.fillMaxSize()
         )
-
-        // ✅ Overlay for readability
         Box(
             modifier = Modifier
                 .fillMaxSize()
                 .background(Color.Black.copy(alpha = 0.4f))
         )
-
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(16.dp)
-        ) {
-
-            // ✅ Chat history
+        Column(modifier = Modifier.fillMaxSize().padding(16.dp)) {
             LazyColumn(
-                modifier = Modifier
-                    .weight(1f)
-                    .fillMaxWidth(),
+                modifier = Modifier.weight(1f).fillMaxWidth(),
                 reverseLayout = true,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
@@ -58,7 +42,6 @@ fun ChatBotScreen(viewModel: ChatViewModel = viewModel()) {
                     ChatBubble(message)
                 }
             }
-
             Spacer(modifier = Modifier.height(8.dp))
 
             // ✅ Input row
@@ -74,9 +57,7 @@ fun ChatBotScreen(viewModel: ChatViewModel = viewModel()) {
                     singleLine = true,
                     enabled = !isSending
                 )
-
                 Spacer(modifier = Modifier.width(8.dp))
-
                 Button(
                     onClick = {
                         if (userInput.isNotBlank()) {
@@ -95,7 +76,6 @@ fun ChatBotScreen(viewModel: ChatViewModel = viewModel()) {
         }
     }
 }
-
 @Composable
 fun ChatBubble(message: Message) {
     val backgroundColor =
@@ -125,7 +105,6 @@ fun ChatBubble(message: Message) {
         }
     }
 }
-
 
 
 //AIzaSyDkONth5K97R7K4Y_RSrF7jR_3gqWQdiVg

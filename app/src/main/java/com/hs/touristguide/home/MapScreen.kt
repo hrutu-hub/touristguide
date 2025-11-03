@@ -1,15 +1,20 @@
 package com.hs.touristguide.screens
 
 import android.Manifest
+import android.app.NotificationChannel
+import android.app.NotificationManager
 import android.content.pm.PackageManager
 import android.location.Geocoder
-import android.os.Bundle
+import android.os.Build
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -20,6 +25,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.viewinterop.AndroidView
+import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 import com.google.android.gms.location.*
 import com.google.android.gms.maps.CameraUpdateFactory
@@ -32,15 +38,21 @@ import com.google.android.libraries.places.api.model.Place
 import com.google.android.libraries.places.api.net.FetchPlaceRequest
 import com.google.android.libraries.places.api.net.FindAutocompletePredictionsRequest
 import com.google.android.libraries.places.api.net.PlacesClient
-import kotlinx.coroutines.launch
+import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FirebaseFirestore
+import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
+import org.json.JSONObject
+import java.net.URL
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MapScreen() {
     val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
 
+    // 🔹 Request both location and notification permissions
     var locationPermissionGranted by remember {
         mutableStateOf(
             ContextCompat.checkSelfPermission(
@@ -50,14 +62,44 @@ fun MapScreen() {
         )
     }
 
-    val permissionLauncher = rememberLauncherForActivityResult(
+    var notificationPermissionGranted by remember {
+        mutableStateOf(
+            if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) true
+            else ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.POST_NOTIFICATIONS
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+
+    val locationPermissionLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.RequestPermission(),
         onResult = { isGranted -> locationPermissionGranted = isGranted }
     )
 
+    val notificationPermissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission(),
+        onResult = { isGranted -> notificationPermissionGranted = isGranted }
+    )
+
     LaunchedEffect(Unit) {
         if (!locationPermissionGranted) {
-            permissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+            locationPermissionLauncher.launch(Manifest.permission.ACCESS_FINE_LOCATION)
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU && !notificationPermissionGranted) {
+            notificationPermissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
+        }
+
+        // ✅ Create notification channel (for Android 8+)
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            val channel = NotificationChannel(
+                "places_channel",
+                "Nearby Places Alerts",
+                NotificationManager.IMPORTANCE_DEFAULT
+            ).apply { description = "Notifications for nearby places" }
+
+            val notificationManager = ContextCompat.getSystemService(context, NotificationManager::class.java)
+            notificationManager?.createNotificationChannel(channel)
         }
     }
 
@@ -70,32 +112,53 @@ fun MapScreen() {
 
     val mapView = remember { MapView(context) }
     var userLocation by remember { mutableStateOf<LatLng?>(null) }
+    var searchQuery by remember { mutableStateOf("") }
+    var autocompleteResults by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
+    var googleMap by remember { mutableStateOf<com.google.android.gms.maps.GoogleMap?>(null) }
+    var userInterest by remember { mutableStateOf<String?>(null) }
+    var nearbyPlaces by remember { mutableStateOf<List<String>>(emptyList()) }
 
-    // Initialize PlacesClient
+    val categories = listOf("Restaurant", "Museum", "Temple", "Hotel", "Park", "Shopping")
+    var selectedCategory by remember { mutableStateOf<String?>(null) }
+
+    // ✅ Fetch user's interest
+    LaunchedEffect(Unit) {
+        val firestore = FirebaseFirestore.getInstance()
+        val auth = FirebaseAuth.getInstance()
+        val userId = auth.currentUser?.uid
+        if (userId != null) {
+            firestore.collection("users").document(userId)
+                .get()
+                .addOnSuccessListener { doc ->
+                    userInterest = doc.getString("interest") ?: "tourist attraction"
+                }
+                .addOnFailureListener {
+                    userInterest = "tourist attraction"
+                }
+        } else {
+            userInterest = "tourist attraction"
+        }
+    }
+
+    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
+
     val placesClient: PlacesClient = remember {
         if (!Places.isInitialized()) {
             Places.initialize(
                 context.applicationContext,
-                "YOUR_GOOGLE_API_KEY_HERE" // replace with your key
+                context.packageManager.getApplicationInfo(
+                    context.packageName,
+                    PackageManager.GET_META_DATA
+                ).metaData?.getString("com.google.android.geo.API_KEY") ?: ""
             )
         }
         Places.createClient(context)
     }
 
-    val fusedLocationClient = remember { LocationServices.getFusedLocationProviderClient(context) }
-
-    val coroutineScope = rememberCoroutineScope()
-
-    var searchQuery by remember { mutableStateOf("") }
-    var autocompleteResults by remember { mutableStateOf<List<AutocompletePrediction>>(emptyList()) }
-
-    var googleMap by remember { mutableStateOf<com.google.android.gms.maps.GoogleMap?>(null) }
-
     DisposableEffect(mapView) {
-        mapView.onCreate(Bundle())
+        mapView.onCreate(null)
         mapView.onStart()
         mapView.onResume()
-
         onDispose {
             mapView.onPause()
             mapView.onStop()
@@ -104,7 +167,6 @@ fun MapScreen() {
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        // Shift map down to avoid overlapping UI
         AndroidView(
             factory = {
                 mapView.apply {
@@ -120,84 +182,72 @@ fun MapScreen() {
                         }
                         val india = LatLng(20.5937, 78.9629)
                         gMap.moveCamera(CameraUpdateFactory.newLatLngZoom(india, 5f))
-                        gMap.addMarker(MarkerOptions().position(india).title("India"))
                     }
                 }
             },
             modifier = Modifier
                 .fillMaxSize()
-                .padding(top = 180.dp) // <-- Map shifted down to leave space for UI
+                .padding(top = 180.dp)
         )
 
         Column(
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 16.dp), // Keep top spacing
+                .padding(16.dp)
+                .align(Alignment.TopCenter),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-
-            // Search bar with visible black text
+            // 🔹 Search bar
             OutlinedTextField(
                 value = searchQuery,
                 onValueChange = {
                     searchQuery = it
                     coroutineScope.launch {
-                        try {
-                            if (it.isNotBlank()) {
-                                val request = FindAutocompletePredictionsRequest.builder()
-                                    .setQuery(it)
-                                    .build()
-                                val response = placesClient.findAutocompletePredictions(request).await()
-                                autocompleteResults = response.autocompletePredictions
-                            } else {
-                                autocompleteResults = emptyList()
-                            }
-                        } catch (e: Exception) {
-                            Log.e("MapScreen", "Autocomplete error", e)
-                        }
+                        if (it.isNotBlank()) {
+                            val req = FindAutocompletePredictionsRequest.builder()
+                                .setQuery(it)
+                                .build()
+                            val res = placesClient.findAutocompletePredictions(req).await()
+                            autocompleteResults = res.autocompletePredictions
+                        } else autocompleteResults = emptyList()
                     }
                 },
                 label = { Text("Search location") },
-                textStyle = TextStyle(color = Color.White), // Typed text visible
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 4.dp),
-                singleLine = true
+                textStyle = TextStyle(color = Color.White),
+                singleLine = true,
+                modifier = Modifier.fillMaxWidth()
             )
 
+            // 🔹 Autocomplete results
             LazyColumn(
                 modifier = Modifier
                     .fillMaxWidth()
                     .heightIn(max = 200.dp)
+                    .background(Color.White)
             ) {
                 items(autocompleteResults) { prediction ->
                     Text(
                         text = prediction.getFullText(null).toString(),
-                        color = Color.Black, // Autocomplete visible
-                        style = MaterialTheme.typography.bodyMedium,
+                        color = Color.Black,
                         modifier = Modifier
                             .fillMaxWidth()
                             .clickable {
                                 searchQuery = prediction.getFullText(null).toString()
                                 coroutineScope.launch {
-                                    try {
-                                        val placeRequest = FetchPlaceRequest.builder(
-                                            prediction.placeId,
-                                            listOf(Place.Field.LAT_LNG, Place.Field.NAME)
-                                        ).build()
-                                        val place = placesClient.fetchPlace(placeRequest).await().place
-                                        val latLng = place.latLng
-                                        if (latLng != null) {
-                                            googleMap?.apply {
-                                                clear()
-                                                addMarker(MarkerOptions().position(latLng).title(place.name))
-                                                moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
-                                            }
+                                    val req = FetchPlaceRequest.builder(
+                                        prediction.placeId,
+                                        listOf(Place.Field.LAT_LNG, Place.Field.NAME)
+                                    ).build()
+                                    val place = placesClient.fetchPlace(req).await().place
+                                    val latLng = place.latLng
+                                    if (latLng != null) {
+                                        googleMap?.apply {
+                                            clear()
+                                            addMarker(MarkerOptions().position(latLng).title(place.name))
+                                            moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
                                         }
-                                        autocompleteResults = emptyList()
-                                    } catch (e: Exception) {
-                                        Log.e("MapScreen", "Error fetching place", e)
                                     }
+                                    autocompleteResults = emptyList()
                                 }
                             }
                             .padding(8.dp)
@@ -205,21 +255,20 @@ fun MapScreen() {
                 }
             }
 
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // 🔹 Buttons (Use current + Search)
+            Row(modifier = Modifier.fillMaxWidth()) {
                 Button(
                     onClick = {
                         coroutineScope.launch {
                             try {
-                                val locationRequest = CurrentLocationRequest.Builder()
+                                val locReq = CurrentLocationRequest.Builder()
                                     .setPriority(Priority.PRIORITY_HIGH_ACCURACY)
-                                    .setMaxUpdateAgeMillis(0)
                                     .build()
-                                val location = fusedLocationClient.getCurrentLocation(locationRequest, null).await()
-                                if (location != null) {
-                                    val latLng = LatLng(location.latitude, location.longitude)
+                                val loc = fusedLocationClient.getCurrentLocation(locReq, null).await()
+                                if (loc != null) {
+                                    val latLng = LatLng(loc.latitude, loc.longitude)
                                     userLocation = latLng
                                     googleMap?.apply {
                                         clear()
@@ -228,7 +277,7 @@ fun MapScreen() {
                                     }
                                 }
                             } catch (e: Exception) {
-                                Log.e("MapScreen", "Error using current location", e)
+                                Log.e("MapScreen", "Error getting location", e)
                             }
                         }
                     },
@@ -244,26 +293,124 @@ fun MapScreen() {
                         coroutineScope.launch {
                             try {
                                 val geocoder = Geocoder(context, Locale.getDefault())
-                                val addresses = geocoder.getFromLocationName(searchQuery, 1)
-                                if (!addresses.isNullOrEmpty()) {
-                                    val address = addresses[0]
-                                    val latLng = LatLng(address.latitude, address.longitude)
+                                val addr = geocoder.getFromLocationName(searchQuery, 1)
+                                if (!addr.isNullOrEmpty()) {
+                                    val latLng = LatLng(addr[0].latitude, addr[0].longitude)
                                     googleMap?.apply {
                                         clear()
                                         addMarker(MarkerOptions().position(latLng).title(searchQuery))
                                         moveCamera(CameraUpdateFactory.newLatLngZoom(latLng, 14f))
                                     }
-                                } else {
-                                    Log.e("MapScreen", "No results found for $searchQuery")
                                 }
                             } catch (e: Exception) {
-                                Log.e("MapScreen", "Error searching location", e)
+                                Log.e("MapScreen", "Search error", e)
                             }
                         }
                     },
                     modifier = Modifier.weight(1f)
                 ) {
                     Text("Search")
+                }
+            }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // 🔹 Category Selection
+            LazyRow(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(8.dp)
+            ) {
+                items(categories) { cat ->
+                    Button(
+                        onClick = { selectedCategory = cat },
+                        colors = ButtonDefaults.buttonColors(
+                            if (selectedCategory == cat) Color(0xFF1E88E5)
+                            else MaterialTheme.colorScheme.primary
+                        )
+                    ) {
+                        Text(cat)
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // 🔹 Nearby Places Button
+            Button(
+                onClick = {
+                    coroutineScope.launch {
+                        try {
+                            val location = userLocation
+                            if (location == null) {
+                                Toast.makeText(context, "Please use current location first!", Toast.LENGTH_SHORT).show()
+                                return@launch
+                            }
+
+                            val keyword = selectedCategory ?: userInterest ?: "tourist attraction"
+                            val apiKey = context.packageManager
+                                .getApplicationInfo(context.packageName, PackageManager.GET_META_DATA)
+                                .metaData?.getString("com.google.android.geo.API_KEY") ?: ""
+
+                            val url = "https://maps.googleapis.com/maps/api/place/nearbysearch/json" +
+                                    "?location=${location.latitude},${location.longitude}" +
+                                    "&radius=5000&keyword=${keyword.replace(" ", "%20")}&key=$apiKey"
+
+                            val result = withContext(Dispatchers.IO) { URL(url).readText() }
+                            val json = JSONObject(result)
+                            val resultsArray = json.getJSONArray("results")
+                            val placesList = mutableListOf<String>()
+                            googleMap?.clear()
+
+                            for (i in 0 until resultsArray.length()) {
+                                val place = resultsArray.getJSONObject(i)
+                                val name = place.getString("name")
+                                val geometry = place.getJSONObject("geometry").getJSONObject("location")
+                                val lat = geometry.getDouble("lat")
+                                val lng = geometry.getDouble("lng")
+                                placesList.add(name)
+                                googleMap?.addMarker(MarkerOptions().position(LatLng(lat, lng)).title(name))
+                            }
+
+                            nearbyPlaces = placesList
+
+                            // ✅ Send notification
+                            if (notificationPermissionGranted) {
+                                val notificationManager = ContextCompat.getSystemService(context, NotificationManager::class.java)
+                                val notification = NotificationCompat.Builder(context, "places_channel")
+                                    .setSmallIcon(android.R.drawable.ic_dialog_info)
+                                    .setContentTitle("Nearby Places Found!")
+                                    .setContentText("We found ${placesList.size} $keyword near you.")
+                                    .setPriority(NotificationCompat.PRIORITY_DEFAULT)
+                                    .build()
+                                notificationManager?.notify(1, notification)
+                            }
+
+                            Toast.makeText(context, "Nearby $keyword shown!", Toast.LENGTH_SHORT).show()
+
+                        } catch (e: Exception) {
+                            Log.e("MapScreen", "Error fetching nearby", e)
+                            Toast.makeText(context, "Error fetching nearby places", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Text("Show Nearby Places Based on Your Interest")
+            }
+
+            if (nearbyPlaces.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(10.dp))
+                Text("Nearby Places:", style = MaterialTheme.typography.titleMedium, color = Color.White)
+                LazyColumn(modifier = Modifier.heightIn(max = 250.dp)) {
+                    items(nearbyPlaces) { place ->
+                        Text(
+                            text = place,
+                            color = Color.White,
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(4.dp)
+                        )
+                    }
                 }
             }
         }

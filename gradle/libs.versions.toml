@@ -1,9 +1,9 @@
 [versions]
-kotlin = "1.9.0"
+kotlin = "2.0.0"
 kotlin-compose-plugin = "1.5.0"         # Compose Kotlin plugin version (must match Compose version)
 compose-ui = "1.5.0"
 compose-Bom = "2024.09.00"
-agp = "8.2.1"
+agp = "8.6.0"
 coreKtx = "1.12.0"
 junit = "4.13.2"
 junitVersion = "1.3.0"
@@ -12,7 +12,10 @@ lifecycleRuntimeKtx = "2.6.2"
 activityCompose = "1.8.2"
 playServicesLocation = "21.3.0"
 generativeai = "0.9.0"
-
+navigationCommonAndroid = "2.9.5"
+firebaseFirestoreKtx = "26.0.2"
+uiText = "1.9.4"
+roomKtx = "2.8.3"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -20,10 +23,8 @@ androidx-junit = { group = "androidx.test.ext", name = "junit", version.ref = "j
 androidx-espresso-core = { group = "androidx.test.espresso", name = "espresso-core", version.ref = "espressoCore" }
 androidx-lifecycle-runtime-ktx = { group = "androidx.lifecycle", name = "lifecycle-runtime-ktx", version.ref = "lifecycleRuntimeKtx" }
 androidx-activity-compose = { group = "androidx.activity", name = "activity-compose", version.ref = "activityCompose" }
-
 # ✅ Use BOM for Compose – no hardcoded versions for Compose libs
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "compose-Bom" }
-
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
@@ -31,10 +32,12 @@ androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-toolin
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }
 androidx-ui-test-junit4 = { group = "androidx.compose.ui", name = "ui-test-junit4" }
 androidx-material3 = { group = "androidx.compose.material3", name = "material3" }
-
 play-services-location = { group = "com.google.android.gms", name = "play-services-location", version.ref = "playServicesLocation" }
 generativeai = { group = "com.google.ai.client.generativeai", name = "generativeai", version.ref = "generativeai" }
-
+androidx-navigation-common-android = { group = "androidx.navigation", name = "navigation-common-android", version.ref = "navigationCommonAndroid" }
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
+androidx-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

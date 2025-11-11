@@ -29,6 +29,11 @@ import com.hs.touristguide.R
 import com.hs.touristguide.camera.CameraCaptureScreen
 import com.hs.touristguide.ui.camera.CameraPermissionRequest
 import kotlinx.coroutines.tasks.await
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.hs.touristguide.workers.WeatherCheckWorker
+import androidx.work.OneTimeWorkRequestBuilder
+import androidx.work.WorkManager
 
 @Composable
 fun HomeScreen(navController: NavHostController) {
@@ -37,6 +42,7 @@ fun HomeScreen(navController: NavHostController) {
     var interest by remember { mutableStateOf<String?>(null) }
     val auth = FirebaseAuth.getInstance()
     val db = FirebaseFirestore.getInstance()
+    val context = LocalContext.current
 
     // ✅ Load Firestore user data safely
     LaunchedEffect(Unit) {
@@ -52,11 +58,19 @@ fun HomeScreen(navController: NavHostController) {
         }
     }
 
+    // ✅ All home features including Test ML Notification
     val items = listOf(
         HomeItem("Open Map", Icons.Filled.LocationOn) { navController.navigate("map") },
         HomeItem("AI Chatbot", Icons.Filled.SmartToy) { navController.navigate("chatbot") },
         HomeItem("Take Photo", Icons.Filled.CameraAlt) { showCamera = true },
-        HomeItem("View Gallery", Icons.Filled.PhotoLibrary) { navController.navigate("gallery") }
+        HomeItem("View Gallery", Icons.Filled.PhotoLibrary) { navController.navigate("gallery") },
+        HomeItem("Weather", Icons.Filled.Cloud) { navController.navigate("weather") },
+        // ✅ NEW: Test ML Notification
+        HomeItem("Test ML\nNotification", Icons.Filled.NotificationsActive) {
+            val workRequest = OneTimeWorkRequestBuilder<WeatherCheckWorker>().build()
+            WorkManager.getInstance(context).enqueue(workRequest)
+            Toast.makeText(context, "Testing ML Notification...", Toast.LENGTH_SHORT).show()
+        }
     )
 
     Box(modifier = Modifier.fillMaxSize()) {
@@ -107,6 +121,7 @@ fun HomeScreen(navController: NavHostController) {
 
                 Spacer(modifier = Modifier.height(40.dp))
 
+                // ✅ Updated Grid
                 LazyVerticalGrid(
                     columns = GridCells.Fixed(2),
                     modifier = Modifier.fillMaxSize(),

@@ -14,6 +14,7 @@ import com.hs.touristguide.home.HomeScreen
 import com.hs.touristguide.home.ChatBotScreen
 import com.hs.touristguide.screens.MapScreen
 import com.hs.touristguide.profile.ProfileSetupScreen
+import com.hs.touristguide.weather.WeatherScreen
 
 @Composable
 fun NavGraph(
@@ -62,7 +63,9 @@ fun NavGraph(
         composable("chatbot") {
             ChatBotScreen()
         }
-
+        composable("weather") {
+            WeatherScreen(navController = navController)
+        }
         // Gallery Screen
         composable("gallery") {
             PhotoGalleryScreen(navController = navController)

@@ -16,6 +16,8 @@ navigationCommonAndroid = "2.9.5"
 firebaseFirestoreKtx = "26.0.2"
 uiText = "1.9.4"
 roomKtx = "2.8.3"
+workRuntimeKtx = "2.11.0"
+material3 = "1.4.0"
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
 junit = { group = "junit", name = "junit", version.ref = "junit" }
@@ -38,6 +40,8 @@ androidx-navigation-common-android = { group = "androidx.navigation", name = "na
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebaseFirestoreKtx" }
 androidx-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
 androidx-room-ktx = { group = "androidx.room", name = "room-ktx", version.ref = "roomKtx" }
+androidx-work-runtime-ktx = { group = "androidx.work", name = "work-runtime-ktx", version.ref = "workRuntimeKtx" }
+material3 = { group = "androidx.compose.material3", name = "material3", version.ref = "material3" }
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }

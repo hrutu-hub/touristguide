@@ -1,14 +1,13 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
-    <!-- Android 13+ notification runtime permission -->
-
 
     <!-- Permissions -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION" />
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
     <uses-permission android:name="android.permission.CAMERA" />
     <uses-permission android:name="android.permission.RECORD_AUDIO" />
@@ -28,12 +27,12 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.TouristGuide"
         tools:targetApi="31"
-        tools:replace="android:label"> <!-- ✅ PRE-EMPTIVE FIX for library conflicts -->
+        tools:replace="android:label">
 
         <!-- ✅ Google Maps & Places API Key -->
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="${MAPS_API_KEY}" />
+            android:value="AIzaSyCOeD8tEAQh3uWHErD6-OgvqfQqmxz7Tds" />
 
         <!-- Optional: if using FusedLocationProvider or Play Services -->
         <meta-data

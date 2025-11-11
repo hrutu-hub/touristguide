@@ -18,7 +18,7 @@ interface WeatherApiService {
 // --- Repository-like Object (inside same file) ---
 object WeatherApi {
     private const val BASE_URL = "https://api.openweathermap.org/data/2.5/"
-    private const val API_KEY = "3297f7df33af68844aa1c77fa7c255e8" // replace with your API key
+    private const val API_KEY = "dndndndnsdfsdfsdfdf"
 
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
